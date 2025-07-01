@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testcases for Command</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 30px; }
+        a { color: #007bff; text-decoration: none; margin-bottom: 18px; display: inline-block; }
+        a:hover { text-decoration: underline; }
+        table { border: 1px solid #333; border-collapse: collapse; width: 100%; margin-top: 18px; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; max-width: 420px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        th { background: #f5f5f5; font-weight: bold; }
+        tr:nth-child(even) { background: #fafbfc; }
+        tr:hover { background: #e6f7ff; }
+    </style>
+</head>
+<body>
+    <h1 id="heading">Testcases for </h1>
+    <a href="/">Back to Summary</a>
+    <table id="testcase-table" class="testcase-table" style="display:none;">
+        <thead>
+        <tr>
+            <th>S.No</th>
+            <th>Testcase Path</th>
+        </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+    <p id="no-testcases-msg" style="display:none;">No testcases found for this command/error type.</p>
+    <script>
+    function getParam(name) {
+        const url = new URL(window.location.href);
+        return url.searchParams.get(name);
+    }
+    const command = getParam('command');
+    const error_type = getParam('error_type');
+    document.getElementById('heading').textContent = `Testcases for ${command} / ${error_type}`;
+    fetch(`/error_testcases?command=${encodeURIComponent(command)}&error_type=${encodeURIComponent(error_type)}`)
+        .then(r => r.json())
+        .then(data => {
+            const tbody = document.querySelector('#testcase-table tbody');
+            const table = document.getElementById('testcase-table');
+            const msg = document.getElementById('no-testcases-msg');
+            tbody.innerHTML = '';
+            if (data.testcases.length > 0) {
+                data.testcases.forEach((tc, i) => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td>${i+1}</td><td title='${tc}'>${tc}</td>`;
+                    tbody.appendChild(tr);
+                });
+                table.style.display = '';
+                msg.style.display = 'none';
+            } else {
+                table.style.display = 'none';
+                msg.style.display = '';
+            }
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testcases for {{ command }} / {{ tag }}</title>
+</head>
+<body>
+    <h1>Testcases for {{ command }} / {{ tag }}</h1>
+    <a href="/">Back to Summary</a>
+    
+    {% if testcase_paths %}
+        <table class="testcase-table">
+            <thead>
+            <tr>
+                <th>S.No</th>
+                <th>Testcase Path</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for path in testcase_paths %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td title="{{ path }}">{{ path }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No testcases found for this command/tag.</p>
+    {% endif %}
+</body>
+</html> 

@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testcase Failure Report</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        /* Chatbot styles */
+        #chatbotBtn {
+            position: fixed;
+            right: 30px;
+            bottom: 30px;
+            z-index: 1001;
+            background: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            width: 56px;
+            height: 56px;
+            font-size: 28px;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            transition: transform 0.2s;
+        }
+        #chatbotBtn:hover {
+            transform: scale(1.1);
+        }
+        #chatbotSidebar {
+            position: fixed;
+            top: 0;
+            right: -400px;
+            width: 400px;
+            height: 100%;
+            background: #fff;
+            box-shadow: -2px 0 8px rgba(0,0,0,0.08);
+            z-index: 1002;
+            transition: right 0.3s cubic-bezier(.4,0,.2,1);
+            display: flex;
+            flex-direction: column;
+        }
+        #chatbotSidebar.open {
+            right: 0;
+        }
+        #chatbotHeader {
+            padding: 18px 20px;
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: #fff;
+            font-size: 18px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #chatbotClose {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 22px;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+        #chatbotClose:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        #chatbotBody {
+            flex: 1;
+            padding: 18px 20px;
+            overflow-y: auto;
+            background: #f8f9fa;
+        }
+        #chatbotInputArea {
+            padding: 14px 20px;
+            border-top: 1px solid #eee;
+            background: #fff;
+            display: flex;
+            gap: 8px;
+        }
+        #chatbotInput {
+            flex: 1;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        #chatbotInput:focus {
+            border-color: #007bff;
+        }
+        #chatbotSend {
+            background: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 20px;
+            padding: 10px 16px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        #chatbotSend:hover {
+            background: #0056b3;
+        }
+        .chatbot-msg {
+            margin-bottom: 12px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        .chatbot-user {
+            color: #007bff;
+            font-weight: 600;
+            text-align: right;
+        }
+        .chatbot-bot {
+            color: #333;
+            background: #fff;
+            padding: 10px 12px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-left: 20px;
+        }
+        .chatbot-error {
+            color: #e74c3c;
+            background: #fdf2f2;
+            padding: 10px 12px;
+            border-radius: 12px;
+            border-left: 3px solid #e74c3c;
+        }
+        .chatbot-suggestions {
+            margin-top: 15px;
+            padding: 15px;
+            background: #e3f2fd;
+            border-radius: 8px;
+        }
+        .chatbot-suggestions h4 {
+            margin: 0 0 10px 0;
+            color: #1976d2;
+            font-size: 14px;
+        }
+        .suggestion-btn {
+            display: block;
+            width: 100%;
+            padding: 8px 12px;
+            margin: 5px 0;
+            background: #fff;
+            border: 1px solid #bbdefb;
+            border-radius: 6px;
+            color: #1976d2;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+        }
+        .suggestion-btn:hover {
+            background: #bbdefb;
+            border-color: #1976d2;
+        }
+        .chatbot-status {
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+            padding: 10px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #eee;
+        }
+        .typing-indicator {
+            display: none;
+            padding: 10px 12px;
+            background: #fff;
+            border-radius: 12px;
+            margin-left: 20px;
+            color: #666;
+            font-style: italic;
+        }
+        @media (max-width: 500px) {
+            #chatbotSidebar {
+                width: 100vw;
+                right: -100vw;
+            }
+            #chatbotSidebar.open {
+                right: 0;
+            }
+        }
+        #error-table-container table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 15px;
+            margin-top: 10px;
+        }
+        #error-table-container th, #error-table-container td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            max-width: 320px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        #error-table-container th {
+            background: #f5f5f5;
+            font-weight: bold;
+        }
+        #error-table-container tr:nth-child(even) { background: #fafbfc; }
+        #error-table-container tr:hover { background: #e6f7ff; }
+        #error-table-heading {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 8px;
+            margin-top: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Testcase Failure Report</h1>
+        
+        <div class="stats">
+            <p>Total Testcases: <span id="totalCases">0</span></p>
+            <p>Testcases with issue: <span id="filteredCases">0</span></p>
+            <p>Generated: <span id="generatedOn">-</span></p>
+        </div>
+
+        <div id="clusteredTableContainer"></div>
+        <div id="detailsView" style="display:none;"></div>
+
+        <div id="loadingSpinner" class="loading" style="display: none;">
+            Loading...
+        </div>
+        
+        <div id="noDataMessage" class="no-data" style="display: none;">
+            No data available
+        </div>
+
+        <hr>
+        <div id="error-table-section">
+            <div id="error-table-container" class="error-summary-table-container" style="margin-top:20px;"></div>
+        </div>
+
+        <hr>
+        <div id="combined-table-section">
+            <div id="combined-table-container" class="error-summary-table-container" style="margin-top:20px;"></div>
+        </div>
+    </div>
+
+    <!-- Chatbot Button -->
+    <button id="chatbotBtn" title="Testcase Failure Chatbot">🤖</button>
+    <!-- Chatbot Sidebar -->
+    <div id="chatbotSidebar">
+        <div id="chatbotHeader">
+            <span>🤖 Testcase Failure Chatbot</span>
+            <button id="clearChatBtn" title="Clear chat" style="background:#e74c3c;border:none;color:white;font-size:12px;cursor:pointer;margin-right:8px;padding:4px 8px;border-radius:4px;vertical-align:middle;margin-top:6px;">Clear</button>
+            <button id="chatbotClose">&times;</button>
+        </div>
+        <div class="chatbot-status" id="chatbotStatus">
+            Analyzing testcase data...
+        </div>
+        <div id="chatbotBody">
+            <div class="chatbot-msg chatbot-bot">
+                <strong>Hello! I'm your Testcase Failure Chatbot.</strong><br>
+                I can help you analyze testcase failures and answer questions about the data. Try asking me anything about the failures, commands, or error patterns!
+            </div>
+            <div class="chatbot-suggestions" id="chatbotSuggestions">
+                <h4>💡 Suggested Questions:</h4>
+                <button class="suggestion-btn" data-query="How many testcase failures are there?">How many testcase failures are there?</button>
+                <button class="suggestion-btn" data-query="Which command fails most often?">Which command fails most often?</button>
+                <button class="suggestion-btn" data-query="What are the most common error tags?">What are the most common error tags?</button>
+                <button class="suggestion-btn" data-query="Show error patterns in failures">Show error patterns in failures</button>
+                <button class="suggestion-btn" data-query="Which testcase categories have most failures?">Which testcase categories have most failures?</button>
+                <button class="suggestion-btn" data-query="Show failure statistics">Show failure statistics</button>
+                <button class="suggestion-btn" data-query="What should I fix first?">What should I fix first?</button>
+                <button class="suggestion-btn" data-query="Find failures for migrate_pdl_tests">Find failures for migrate_pdl_tests</button>
+            </div>
+        </div>
+        <div class="typing-indicator" id="typingIndicator">AI is thinking...</div>
+        <form id="chatbotInputArea" autocomplete="off">
+            <input id="chatbotInput" type="text" placeholder="Ask me about the testcase data..." required />
+            <button id="chatbotSend" type="submit">Send</button>
+        </form>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script>
+    // Advanced Chatbot UI logic
+    const chatbotBtn = document.getElementById('chatbotBtn');
+    const chatbotSidebar = document.getElementById('chatbotSidebar');
+    const chatbotClose = document.getElementById('chatbotClose');
+    const chatbotBody = document.getElementById('chatbotBody');
+    const chatbotInput = document.getElementById('chatbotInput');
+    const chatbotInputArea = document.getElementById('chatbotInputArea');
+    const chatbotStatus = document.getElementById('chatbotStatus');
+    const typingIndicator = document.getElementById('typingIndicator');
+    const chatbotSuggestions = document.getElementById('chatbotSuggestions');
+
+    // Initialize chatbot
+    async function initChatbot() {
+        try {
+            console.log('Initializing chatbot...');
+            
+            // First, load the testcase data if not already loaded
+            try {
+                const testcaseResponse = await fetch('/api/testcases');
+                const testcaseData = await testcaseResponse.json();
+                console.log('Testcase data loaded:', testcaseData.filtered_cases, 'cases');
+            } catch (error) {
+                console.log('Testcase data already loaded or not available');
+            }
+            
+            // Then check chatbot data
+            const response = await fetch('/api/chatbot/data');
+            const data = await response.json();
+            console.log('Chatbot data:', data);
+            if (data.data_available) {
+                chatbotStatus.textContent = `✅ Data loaded: ${data.total_records} records available`;
+            } else {
+                chatbotStatus.textContent = '⚠️ No data available - load testcase data first';
+            }
+        } catch (error) {
+            console.error('Chatbot init error:', error);
+            chatbotStatus.textContent = '❌ Error loading data';
+        }
+    }
+
+    // Show typing indicator
+    function showTyping() {
+        typingIndicator.style.display = 'block';
+        chatbotBody.scrollTop = chatbotBody.scrollHeight;
+    }
+
+    // Hide typing indicator
+    function hideTyping() {
+        typingIndicator.style.display = 'none';
+    }
+
+    // Add message to chat
+    function addMessage(content, type = 'bot') {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `chatbot-msg chatbot-${type}`;
+        msgDiv.innerHTML = content;
+        chatbotBody.appendChild(msgDiv);
+        chatbotBody.scrollTop = chatbotBody.scrollHeight;
+    }
+
+    // Process chatbot query
+    async function processQuery(query) {
+        showTyping();
+        try {
+            console.log('Sending query:', query);
+            const response = await fetch('/api/chatbot', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query: query })
+            });
+            const data = await response.json();
+            console.log('Received response:', data);
+            hideTyping();
+            
+            if (data.response) {
+                addMessage(data.response.replace(/\n/g, '<br>'));
+            } else if (data.error) {
+                addMessage(`❌ Error: ${data.error}`, 'error');
+            }
+        } catch (error) {
+            console.error('Chatbot error:', error);
+            hideTyping();
+            addMessage('❌ Network error. Please try again.', 'error');
+        }
+    }
+
+    // Event listeners
+    chatbotBtn.onclick = () => {
+        chatbotSidebar.classList.add('open');
+        initChatbot();
+    };
+    
+    chatbotClose.onclick = () => chatbotSidebar.classList.remove('open');
+
+    // Handle suggestion buttons
+    chatbotSuggestions.addEventListener('click', (e) => {
+        if (e.target.classList.contains('suggestion-btn')) {
+            const query = e.target.dataset.query;
+            addMessage(query, 'user');
+            processQuery(query);
+        }
+    });
+
+    // Handle form submission
+    chatbotInputArea.onsubmit = async (e) => {
+        e.preventDefault();
+        const query = chatbotInput.value.trim();
+        if (!query) return;
+        
+        addMessage(query, 'user');
+        chatbotInput.value = '';
+        processQuery(query);
+    };
+
+    // Handle Enter key
+    chatbotInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            chatbotInputArea.dispatchEvent(new Event('submit'));
+        }
+    });
+
+    // Add event for Clear Chat button
+    document.getElementById('clearChatBtn').onclick = function() {
+        chatbotBody.innerHTML = `<div class='chatbot-msg chatbot-bot'><strong>Hello! I'm your Testcase Failure Chatbot.</strong><br>I can help you analyze testcase failures and answer questions about the data. Try asking me anything about the failures, commands, or error patterns!</div>` + chatbotSuggestions.outerHTML;
+    };
+
+    // Initialize when page loads
+    document.addEventListener('DOMContentLoaded', () => {
+        // Initialize chatbot after a short delay to ensure data is loaded
+        setTimeout(initChatbot, 1000);
+    });
+
+    function loadErrorTable() {
+        fetch('/api/error_table')
+            .then(r => r.json())
+            .then(data => {
+                const rows = data.table;
+                let html = `<div id='error-table-heading'>Error Summary Table</div>`;
+                html += `<table>`;
+                html += `<thead><tr><th>S.No</th><th>Failing Command</th><th>Core Error</th><th>nc_diff Error</th><th>simulate_diff_error</th><th>make error</th><th>Others</th></tr></thead><tbody>`;
+                for (const row of rows) {
+                    html += `<tr>`;
+                    html += `<td>${row.sno}</td>`;
+                    html += `<td>${row.failing_command || ''}</td>`;
+                    html += `<td>${row.core_error ? `<a href='/error_testcases_page?command=${encodeURIComponent(row.failing_command)}&error_type=core' target='_blank' title='${(row.core_error_testcases||[]).join("\n") || ''}'>${row.core_error}</a>` : ''}</td>`;
+                    html += `<td>${row.nc_diff_error ? `<a href='/error_testcases_page?command=${encodeURIComponent(row.failing_command)}&error_type=nc_diff' target='_blank' title='${(row.nc_diff_error_testcases||[]).join("\n") || ''}'>${row.nc_diff_error}</a>` : ''}</td>`;
+                    html += `<td>${row.simulate_diff_error ? `<a href='/error_testcases_page?command=${encodeURIComponent(row.failing_command)}&error_type=simulate_diff' target='_blank' title='${(row.simulate_diff_error_testcases||[]).join("\n") || ''}'>${row.simulate_diff_error}</a>` : ''}</td>`;
+                    html += `<td>${row.make_error || ''}</td>`;
+                    html += `<td>${row.others ? `<a href='/error_testcases_page?command=${encodeURIComponent(row.failing_command)}&error_type=others' target='_blank' title='${(row.others_error_testcases||[]).join("\n") || ''}'>${row.others}</a>` : ''}</td>`;
+                    html += `</tr>`;
+                }
+                html += `</tbody></table>`;
+                document.getElementById('error-table-container').innerHTML = html;
+            });
+    }
+    document.addEventListener('DOMContentLoaded', loadErrorTable);
+
+    function loadCombinedTable() {
+        fetch('/api/combined_table')
+            .then(r => r.json())
+            .then(data => {
+                const rows = data.table;
+                let html = `<div id='error-table-heading'>Combined Failure & Error Summary Table</div>`;
+                html += `<table>`;
+                html += `<thead><tr><th>S.No</th><th>Failing Command</th><th>Total Failures</th><th>Unique Tags</th><th>Core Error</th><th>nc_diff Error</th><th>simulate_diff_error</th><th>make error</th><th>Others</th><th>Top Tags</th></tr></thead><tbody>`;
+                for (const row of rows) {
+                    html += `<tr>`;
+                    html += `<td>${row.sno}</td>`;
+                    html += `<td>${row.failing_command || ''}</td>`;
+                    html += `<td>${row.total_failures ? `<a href='/error_testcases_page?command=${encodeURIComponent(row.failing_command)}&error_type=all' target='_blank'>${row.total_failures}</a>` : ''}</td>`;
+                    html += `<td>${row.unique_tags || ''}</td>`;
+                    html += `<td>${row.core_error ? `<a href='/error_testcases_page?command=${encodeURIComponent(row.failing_command)}&error_type=core' target='_blank' title='${(row.core_error_testcases||[]).join("\n") || ''}'>${row.core_error}</a>` : ''}</td>`;
+                    html += `<td>${row.nc_diff_error ? `<a href='/error_testcases_page?command=${encodeURIComponent(row.failing_command)}&error_type=nc_diff' target='_blank' title='${(row.nc_diff_error_testcases||[]).join("\n") || ''}'>${row.nc_diff_error}</a>` : ''}</td>`;
+                    html += `<td>${row.simulate_diff_error ? `<a href='/error_testcases_page?command=${encodeURIComponent(row.failing_command)}&error_type=simulate_diff' target='_blank' title='${(row.simulate_diff_error_testcases||[]).join("\n") || ''}'>${row.simulate_diff_error}</a>` : ''}</td>`;
+                    html += `<td>${row.make_error || ''}</td>`;
+                    html += `<td>${row.others ? `<a href='/error_testcases_page?command=${encodeURIComponent(row.failing_command)}&error_type=others' target='_blank' title='${(row.others_error_testcases||[]).join("\n") || ''}'>${row.others}</a>` : ''}</td>`;
+                    html += `<td>`;
+                    if (row.top_tags && row.top_tags.length > 0) {
+                        html += row.top_tags.map(t => `<a href='/error_testcases_page?command=${encodeURIComponent(row.failing_command)}&error_type=tag&tag=${encodeURIComponent(t.tag)}' target='_blank'>${t.tag} (${t.count})</a>`).join(', ');
+                    }
+                    html += `</td>`;
+                    html += `</tr>`;
+                }
+                html += `</tbody></table>`;
+                document.getElementById('combined-table-container').innerHTML = html;
+            });
+    }
+    document.addEventListener('DOMContentLoaded', loadCombinedTable);
+    </script>
+</body>
+</html> 
